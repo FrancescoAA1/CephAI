@@ -66,21 +66,6 @@ a time, since each accessor falls back independently.
 Push to GitHub, then on [share.streamlit.io](https://share.streamlit.io) point a new app at this
 repo with `app.py` as the entrypoint. Add `CEPH_API_URL` to Secrets when the agent is ready.
 
-### Access control
-
-The app is open by default, which is what you want for a local demo or a screen-share. Set
-`CEPH_PASSWORD` (env or Secrets) and it will ask for that code before rendering anything:
-
-```toml
-# .streamlit/secrets.toml  — gitignored
-CEPH_PASSWORD = "pick-something"
-```
-
-Use it if the dashboard goes on a public Streamlit Cloud URL, because anyone with the link can
-otherwise approve and reject decisions. It is a shared code, not an identity system — it cannot tell
-you *who* approved something. Before this console drives real shipments, put proper SSO in front of
-it (Streamlit's native `st.login()` OIDC, or an authenticating proxy).
-
 ## What's on screen
 
 - **KPI strip** — shipment, customer, corridor, deadline buffer, CO2e against baseline, and how
@@ -111,7 +96,6 @@ deadline are drawn hollow with an ice outline — disqualified, not just worse.
 |---|---|
 | `app.py` | Layout and all rendering |
 | `theme.py` | Palette, CSS, Plotly treatment, HTML helpers |
-| `auth.py` | Optional shared-password gate — inert unless `CEPH_PASSWORD` is set |
 | `agent_client.py` | **The only integration point.** Live HTTP or fixtures |
 | `static_data.py` | Demo fixtures — never imported outside `agent_client` |
 

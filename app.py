@@ -10,7 +10,6 @@ import plotly.graph_objects as go
 import streamlit as st
 
 import agent_client as agent
-from auth import require_password
 from theme import (
     COLORS,
     OCTOPUS,
@@ -31,7 +30,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 inject_css()
-require_password()
 
 st.session_state.setdefault("chat", [])
 st.session_state.setdefault("verdicts", {})
