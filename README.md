@@ -63,8 +63,34 @@ a time, since each accessor falls back independently.
 
 ## Deploying
 
-Push to GitHub, then on [share.streamlit.io](https://share.streamlit.io) point a new app at this
-repo with `app.py` as the entrypoint. Add `CEPH_API_URL` to Secrets when the agent is ready.
+Streamlit Community Cloud, free, about three minutes:
+
+1. Go to [share.streamlit.io](https://share.streamlit.io) and sign in with GitHub. Authorise it for
+   `FrancescoAA1/CephAI` — a private repo needs the extra repository permission.
+2. **Create app** → **Deploy a public app from GitHub**.
+3. Repository `FrancescoAA1/CephAI`, branch `main`, main file `app.py`. Pick your own subdomain —
+   that URL is what you share.
+4. **Deploy**. First build installs the dependencies and takes a couple of minutes; later pushes to
+   `main` redeploy automatically.
+
+Nothing else is required — no secrets, no config. The app runs on its fixtures and shows the
+**DEMO DATA** badge.
+
+When Didier's endpoint exists, add it under **⋮ → Settings → Secrets** without redeploying:
+
+```toml
+CEPH_API_URL = "https://your-agent-endpoint"
+```
+
+The badge flips to **LIVE AGENT** only if the endpoint actually answers, so a typo or a sleeping
+service shows DEMO rather than silently pretending to be live.
+
+Two things worth knowing before demo day:
+
+- Dependencies are pinned in `requirements.txt` to the exact versions the dashboard was verified
+  against, so the build cannot drift under you overnight.
+- Free-tier apps sleep after inactivity and take ~30 s to wake. Open the URL a few minutes before
+  presenting.
 
 ## What's on screen
 
