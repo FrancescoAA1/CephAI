@@ -1,8 +1,8 @@
 """Design system for the DSV Ceph AI dashboard.
 
-Night operations-centre palette: deep navy base, warm amber accents, teal for data,
-muted purple for anything ML-driven. Everything visual is defined here so the rest of
-the app only composes layout.
+Palette: https://coolors.co/palette/b9d6f2-061a40-0353a4-006daa-003559
+Deep navy ground, three blues for data, ice blue for anything that needs the eye.
+Square corners throughout, no motion, no glow.
 """
 
 from __future__ import annotations
@@ -10,28 +10,40 @@ from __future__ import annotations
 import streamlit as st
 
 COLORS = {
-    "bg": "#0a0e1a",
-    "bg_alt": "#111827",
-    "card": "#1f2937",
-    "amber": "#f59e0b",
-    "teal": "#14b8a6",
-    "purple": "#7c3aed",
-    "orange": "#ea580c",
-    "red": "#ef4444",
-    "text": "#f3f4f6",
-    "muted": "#9ca3af",
-    "line": "rgba(255,255,255,0.06)",
-    "grid": "rgba(255,255,255,0.05)",
+    "bg": "#061a40",
+    "deep": "#003559",
+    "blue": "#0353a4",
+    "cyan": "#006daa",
+    "ice": "#b9d6f2",
+    "text": "#b9d6f2",
+    "muted": "#7a9cc6",
+    "line": "rgba(185,214,242,0.14)",
+    "grid": "rgba(185,214,242,0.07)",
 }
 
-CHART_SEQUENCE = [COLORS["amber"], COLORS["teal"], COLORS["orange"], COLORS["purple"]]
+CHART_SEQUENCE = [COLORS["ice"], COLORS["cyan"], COLORS["blue"], COLORS["deep"]]
 
 STATUS_COLORS = {
-    "ok": COLORS["teal"],
-    "warn": COLORS["amber"],
-    "critical": COLORS["red"],
-    "ai": COLORS["purple"],
+    "ok": COLORS["cyan"],
+    "warn": COLORS["ice"],
+    "critical": COLORS["ice"],
 }
+
+OCTOPUS = """
+<svg class="octo" width="30" height="30" viewBox="0 0 32 32" fill="none">
+  <path d="M16 3.2c-5.6 0-9.2 3.9-9.2 9 0 2.9.7 5.1 1.5 6.7h15.4c.8-1.6 1.5-3.8 1.5-6.7
+           0-5.1-3.6-9-9.2-9z" fill="#b9d6f2"/>
+  <circle cx="12.7" cy="11.9" r="1.6" fill="#061a40"/>
+  <circle cx="19.3" cy="11.9" r="1.6" fill="#061a40"/>
+  <g stroke="#b9d6f2" stroke-width="2" stroke-linecap="round">
+    <path d="M7.6 19.2c-.9 3.2-2.6 5.4-5 6.5-1.2.5-1.9-.9-.6-1.5"/>
+    <path d="M11.7 19.6c-.6 3.8-1.5 6.6-2.6 8.3-.7 1.1-2 .3-1.4-1"/>
+    <path d="M16 19.8c.3 3.9.2 6.9-.3 8.9-.3 1.3-1.8 1-1.5-.4"/>
+    <path d="M20.3 19.6c.6 3.8 1.5 6.6 2.6 8.3.7 1.1 2 .3 1.4-1"/>
+    <path d="M24.4 19.2c.9 3.2 2.6 5.4 5 6.5 1.2.5 1.9-.9.6-1.5"/>
+  </g>
+</svg>
+"""
 
 _CSS = """
 <style>
@@ -42,9 +54,8 @@ html, body, [class*="css"], .stApp, button, input, textarea, select {
 }
 
 .stApp {
-    background: linear-gradient(160deg, #0a0e1a 0%, #0b1020 45%, #111827 100%);
-    background-attachment: fixed;
-    color: #f3f4f6;
+    background: #061a40;
+    color: #b9d6f2;
 }
 
 .block-container {
@@ -56,15 +67,20 @@ html, body, [class*="css"], .stApp, button, input, textarea, select {
 [data-testid="stDecoration"] { display: none; }
 [data-testid="stSidebar"] { display: none; }
 
-h1, h2, h3, h4 { color: #f3f4f6; letter-spacing: -0.015em; font-weight: 600; }
+/* square everything, kill all motion */
+*, *::before, *::after {
+    border-radius: 0 !important;
+    transition: none !important;
+    animation: none !important;
+    box-shadow: none !important;
+}
+
+h1, h2, h3, h4 { color: #b9d6f2; letter-spacing: -0.015em; font-weight: 600; }
 
 /* ---------- surfaces ---------- */
 .glass {
-    background: rgba(31, 41, 55, 0.30);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
+    background: #003559;
+    border: 1px solid rgba(185,214,242,0.14);
     padding: 14px 16px;
     margin-bottom: 12px;
 }
@@ -74,7 +90,7 @@ h1, h2, h3, h4 { color: #f3f4f6; letter-spacing: -0.015em; font-weight: 600; }
     font-weight: 600;
     letter-spacing: 0.13em;
     text-transform: uppercase;
-    color: #9ca3af;
+    color: #7a9cc6;
     margin: 0 0 12px 0;
     display: flex;
     align-items: center;
@@ -84,28 +100,29 @@ h1, h2, h3, h4 { color: #f3f4f6; letter-spacing: -0.015em; font-weight: 600; }
     content: "";
     flex: 1;
     height: 1px;
-    background: rgba(255,255,255,0.06);
+    background: rgba(185,214,242,0.14);
 }
 
 /* ---------- top bar ---------- */
 .topbar {
     display: flex;
-    align-items: baseline;
-    gap: 14px;
+    align-items: center;
+    gap: 12px;
     padding: 2px 0 14px 0;
-    border-bottom: 1px solid rgba(255,255,255,0.06);
+    border-bottom: 1px solid rgba(185,214,242,0.14);
     margin-bottom: 16px;
 }
+.octo { flex: none; display: block; }
 .wordmark {
     font-size: 19px;
     font-weight: 700;
     letter-spacing: -0.02em;
-    color: #f3f4f6;
+    color: #7a9cc6;
 }
-.wordmark span { color: #f59e0b; }
+.wordmark span { color: #b9d6f2; }
 .tagline {
     font-size: 12px;
-    color: #9ca3af;
+    color: #7a9cc6;
     flex: 1;
 }
 .mono { font-variant-numeric: tabular-nums; font-feature-settings: "tnum"; }
@@ -120,155 +137,143 @@ h1, h2, h3, h4 { color: #f3f4f6; letter-spacing: -0.015em; font-weight: 600; }
     letter-spacing: 0.09em;
     text-transform: uppercase;
     padding: 3px 9px;
-    border-radius: 4px;
     border: 1px solid;
     white-space: nowrap;
 }
-.badge-demo   { color: #f59e0b; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
-.badge-live   { color: #14b8a6; border-color: rgba(20,184,166,0.35); background: rgba(20,184,166,0.08); }
-.badge-ok     { color: #14b8a6; border-color: rgba(20,184,166,0.35); background: rgba(20,184,166,0.08); }
-.badge-warn   { color: #f59e0b; border-color: rgba(245,158,11,0.35); background: rgba(245,158,11,0.08); }
-.badge-critical { color: #ef4444; border-color: rgba(239,68,68,0.38); background: rgba(239,68,68,0.09); }
-.badge-ai     { color: #a78bfa; border-color: rgba(124,58,237,0.42); background: rgba(124,58,237,0.12); }
-.dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.badge-demo { color: #b9d6f2; border-color: rgba(185,214,242,0.45); background: transparent; }
+.badge-live { color: #061a40; border-color: #006daa; background: #006daa; }
+.badge-ok   { color: #b9d6f2; border-color: #006daa; background: transparent; }
+.badge-warn { color: #b9d6f2; border-color: rgba(185,214,242,0.55); background: transparent; }
+/* loudest treatment available inside the palette: full ice fill on navy */
+.badge-critical { color: #061a40; border-color: #b9d6f2; background: #b9d6f2; }
+.badge-ai   { color: #b9d6f2; border-color: #0353a4; background: #0353a4; }
+.dot { width: 6px; height: 6px; background: currentColor; }
 
 /* ---------- kpi tiles ---------- */
 .kpi {
-    background: rgba(31, 41, 55, 0.30);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255,255,255,0.06);
-    border-radius: 10px;
+    background: #003559;
+    border: 1px solid rgba(185,214,242,0.14);
     padding: 12px 14px;
     height: 100%;
     display: flex;
     flex-direction: column;
 }
-/* only equalise tile heights once the columns actually sit side by side */
 @media (min-width: 640px) {
     .kpi { min-height: 94px; }
     .kpi .kpi-sub { margin-top: auto; padding-top: 4px; }
 }
-.kpi-accent { box-shadow: 0 0 0 1px rgba(245,158,11,0.18), 0 6px 22px -12px rgba(245,158,11,0.55); }
+.kpi-accent { border-left: 3px solid #b9d6f2; }
 .kpi-label {
     font-size: 10px;
     letter-spacing: 0.11em;
     text-transform: uppercase;
-    color: #9ca3af;
+    color: #7a9cc6;
     margin-bottom: 6px;
 }
 .kpi-value {
     font-size: 20px;
     font-weight: 600;
-    color: #f3f4f6;
+    color: #b9d6f2;
     line-height: 1.15;
     font-variant-numeric: tabular-nums;
 }
 .kpi-value.sm { font-size: 15px; }
-.kpi-sub { font-size: 11px; color: #9ca3af; margin-top: 4px; }
-.t-amber { color: #f59e0b !important; }
-.t-teal  { color: #14b8a6 !important; }
-.t-purple{ color: #a78bfa !important; }
-.t-red   { color: #ef4444 !important; }
-.t-muted { color: #9ca3af !important; }
+.kpi-sub { font-size: 11px; color: #7a9cc6; margin-top: 4px; }
+.t-ice   { color: #b9d6f2 !important; }
+.t-cyan  { color: #006daa !important; }
+.t-blue  { color: #0353a4 !important; }
+.t-muted { color: #7a9cc6 !important; }
 
 /* ---------- key/value rows ---------- */
-.kv { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px dashed rgba(255,255,255,0.05); }
+.kv { display: flex; justify-content: space-between; gap: 16px; padding: 6px 0; border-bottom: 1px solid rgba(185,214,242,0.07); }
 .kv:last-child { border-bottom: none; }
-.kv-k { font-size: 11.5px; color: #9ca3af; }
-.kv-v { font-size: 12.5px; color: #f3f4f6; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
+.kv-k { font-size: 11.5px; color: #7a9cc6; }
+.kv-v { font-size: 12.5px; color: #b9d6f2; font-weight: 500; text-align: right; font-variant-numeric: tabular-nums; }
 
 /* ---------- decisions ---------- */
 .decision {
-    border: 1px solid rgba(255,255,255,0.06);
-    border-left: 2px solid #7c3aed;
-    border-radius: 8px;
+    border: 1px solid rgba(185,214,242,0.14);
+    border-left: 3px solid #0353a4;
     padding: 10px 12px;
     margin-bottom: 9px;
-    background: rgba(17,24,39,0.35);
+    background: #003559;
 }
 .decision-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 8px; }
-.decision-title { font-size: 12.5px; font-weight: 600; color: #f3f4f6; }
+.decision-title { font-size: 12.5px; font-weight: 600; color: #b9d6f2; }
 .conf-row { display: flex; align-items: center; gap: 9px; }
-.conf-track { flex: 1; height: 4px; border-radius: 2px; background: rgba(255,255,255,0.07); overflow: hidden; }
-.conf-fill { height: 100%; border-radius: 2px; }
+.conf-track { flex: 1; height: 4px; background: rgba(185,214,242,0.12); overflow: hidden; }
+.conf-fill { height: 100%; }
 .conf-num { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
-.rationale { font-size: 11.5px; color: #9ca3af; line-height: 1.65; margin: 8px 0 0 0; padding-left: 14px; }
+.rationale { font-size: 11.5px; color: #7a9cc6; line-height: 1.65; margin: 8px 0 0 0; padding-left: 14px; }
 .rationale li { margin-bottom: 2px; }
 
 /* ---------- feed ---------- */
-.feed-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.04); font-size: 11.5px; }
+.feed-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(185,214,242,0.07); font-size: 11.5px; }
 .feed-row:last-child { border-bottom: none; }
-.chip { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 6px; border-radius: 3px; background: rgba(255,255,255,0.06); color: #9ca3af; min-width: 40px; text-align: center; }
-.feed-name { flex: 1; color: #f3f4f6; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.feed-src { color: #9ca3af; font-size: 11px; }
+.chip { font-size: 9.5px; font-weight: 700; letter-spacing: 0.06em; padding: 2px 6px; background: #0353a4; color: #b9d6f2; min-width: 40px; text-align: center; }
+.feed-name { flex: 1; color: #b9d6f2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.feed-src { color: #7a9cc6; font-size: 11px; }
 
 /* ---------- streamlit widget overrides ---------- */
 div[data-testid="stSelectbox"] label, div[data-testid="stSlider"] label {
     font-size: 10px !important;
     letter-spacing: 0.11em;
     text-transform: uppercase;
-    color: #9ca3af !important;
+    color: #7a9cc6 !important;
     font-weight: 600 !important;
 }
 div[data-baseweb="select"] > div {
-    background: rgba(31,41,55,0.45) !important;
-    border-color: rgba(255,255,255,0.08) !important;
+    background: #003559 !important;
+    border-color: rgba(185,214,242,0.18) !important;
     font-size: 13px;
 }
+div[data-baseweb="popover"] li { font-size: 13px; }
 .stSlider [data-baseweb="slider"] { padding-top: 4px; }
 
 .stButton > button {
-    background: rgba(31,41,55,0.45);
-    border: 1px solid rgba(255,255,255,0.08);
-    color: #f3f4f6;
+    background: #003559;
+    border: 1px solid rgba(185,214,242,0.22);
+    color: #b9d6f2;
     font-size: 11.5px;
     font-weight: 500;
     padding: 3px 12px;
-    border-radius: 6px;
     min-height: 0;
-    transition: border-color .15s ease, color .15s ease;
 }
-.stButton > button:hover { border-color: rgba(245,158,11,0.5); color: #f59e0b; }
-.stButton > button:focus:not(:active) { color: #f59e0b; border-color: rgba(245,158,11,0.5); }
+.stButton > button:hover { border-color: #b9d6f2; color: #b9d6f2; background: #0353a4; }
+.stButton > button:focus:not(:active) { color: #b9d6f2; border-color: #b9d6f2; }
 
-div[data-testid="stExpander"] {
-    border: none !important;
-    background: transparent !important;
-}
+div[data-testid="stExpander"] { border: none !important; background: transparent !important; }
 div[data-testid="stExpander"] details { border: none !important; background: transparent !important; }
-div[data-testid="stExpander"] summary { font-size: 11px !important; color: #9ca3af !important; padding: 2px 0 !important; }
-div[data-testid="stExpander"] summary:hover { color: #f59e0b !important; }
+div[data-testid="stExpander"] summary { font-size: 11px !important; color: #7a9cc6 !important; padding: 2px 0 !important; }
+div[data-testid="stExpander"] summary:hover { color: #b9d6f2 !important; }
 
 div[data-testid="stChatInput"] textarea { font-size: 13px; }
 div[data-testid="stChatInput"] > div {
-    background: rgba(31,41,55,0.45) !important;
-    border: 1px solid rgba(255,255,255,0.08) !important;
+    background: #003559 !important;
+    border: 1px solid rgba(185,214,242,0.18) !important;
 }
 div[data-testid="stChatMessage"] {
-    background: rgba(31,41,55,0.28);
-    border: 1px solid rgba(255,255,255,0.05);
-    border-radius: 8px;
+    background: #003559;
+    border: 1px solid rgba(185,214,242,0.10);
     padding: 8px 12px;
     margin-bottom: 7px;
 }
 div[data-testid="stChatMessage"] p { font-size: 12.5px; line-height: 1.6; margin-bottom: 4px; }
 div[data-testid="stChatMessageAvatarUser"] {
-    background: rgba(245,158,11,0.14) !important;
-    color: #f59e0b !important;
-    border: 1px solid rgba(245,158,11,0.3);
+    background: #0353a4 !important;
+    color: #b9d6f2 !important;
+    border: 1px solid rgba(185,214,242,0.22);
 }
 div[data-testid="stChatMessageAvatarAssistant"] {
-    background: rgba(124,58,237,0.16) !important;
-    color: #a78bfa !important;
-    border: 1px solid rgba(124,58,237,0.35);
+    background: #006daa !important;
+    color: #b9d6f2 !important;
+    border: 1px solid rgba(185,214,242,0.22);
 }
 
-div[data-testid="stDataFrame"] { border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; }
+div[data-testid="stDataFrame"] { border: 1px solid rgba(185,214,242,0.14); }
 
-hr { border-color: rgba(255,255,255,0.06); margin: 6px 0 14px 0; }
+hr { border-color: rgba(185,214,242,0.14); margin: 6px 0 14px 0; }
 
-/* tighten default vertical rhythm for a denser board */
 div[data-testid="stVerticalBlock"] > div { gap: 0.35rem; }
 </style>
 """
@@ -299,7 +304,7 @@ def plotly_layout(fig, height: int = 250, ytitle: str = "", showlegend: bool = F
         ),
         bargap=0.45,
         hoverlabel=dict(
-            bgcolor=COLORS["bg_alt"],
+            bgcolor=COLORS["deep"],
             bordercolor=COLORS["line"],
             font=dict(family="Inter, sans-serif", size=11.5, color=COLORS["text"]),
         ),
@@ -352,13 +357,13 @@ def kv(key: str, value: str, tone: str = "") -> str:
 
 
 def confidence_bar(score: float) -> str:
-    """Purple confidence meter — the ML signal always reads purple."""
+    """Confidence meter — ice for high certainty, mid blue when the model is unsure."""
     pct = max(0.0, min(100.0, score))
-    color = COLORS["purple"] if pct >= 60 else COLORS["amber"]
+    color = COLORS["ice"] if pct >= 60 else COLORS["cyan"]
     return (
         '<div class="conf-row">'
         f'<div class="conf-track"><div class="conf-fill" style="width:{pct:.0f}%;'
-        f'background:linear-gradient(90deg,{color},#a78bfa);"></div></div>'
+        f'background:{color};"></div></div>'
         f'<span class="conf-num" style="color:{color}">{pct:.1f}%</span>'
         "</div>"
     )

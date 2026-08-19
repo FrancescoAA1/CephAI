@@ -12,6 +12,7 @@ import streamlit as st
 import agent_client as agent
 from theme import (
     COLORS,
+    OCTOPUS,
     badge,
     confidence_bar,
     inject_css,
@@ -23,7 +24,7 @@ from theme import (
 
 st.set_page_config(
     page_title="DSV Ceph AI",
-    page_icon="◆",
+    page_icon="🐙",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
@@ -36,10 +37,10 @@ st.session_state.setdefault("verdicts", {})
 def risk_band(hours: float) -> tuple[str, str, str]:
     """Buffer between ETA and deadline → (label, badge kind, colour token)."""
     if hours < 0:
-        return "Past deadline", "critical", "red"
+        return "Past deadline", "critical", "ice"
     if hours < 12:
-        return "At risk", "warn", "amber"
-    return "On track", "ok", "teal"
+        return "At risk", "warn", "ice"
+    return "On track", "ok", "cyan"
 
 
 # ----------------------------------------------------------------- top bar
@@ -48,7 +49,7 @@ live = agent.is_live()
 source_badge = badge("Live agent", "live", dot=True) if live else badge("Demo data", "demo", dot=True)
 
 st.markdown(
-    '<div class="topbar">'
+    f'<div class="topbar">{OCTOPUS}'
     '<span class="wordmark">DSV <span>Ceph</span> AI</span>'
     '<span class="tagline">One data. Smarter decisions. Better services for you.</span>'
     f"{source_badge}</div>",
@@ -87,8 +88,8 @@ kpis = [
     kpi("CO2e — recommended",
         f'{recommended["co2e_kg"]:,.0f} kg',
         f'{co2_delta:+,.0f} kg vs booked · {recommended["route"]}',
-        tone="teal" if co2_delta <= 0 else "amber"),
-    kpi("Human review", f"{len(pending)}", f"of {len(decisions)} decisions", tone="purple"),
+        tone="cyan" if co2_delta <= 0 else "ice"),
+    kpi("Human review", f"{len(pending)}", f"of {len(decisions)} decisions", tone="ice"),
 ]
 for column, tile in zip(tiles, kpis):
     column.markdown(tile, unsafe_allow_html=True)
@@ -104,8 +105,8 @@ with left:
     body.append(kv("Current location", shipment["current_location"]))
     body.append(kv("Status", shipment["current_status"]))
     body.append(kv("Last tracking event", shipment["latest_tracking"]))
-    body.append(kv("Disruption", shipment["disruption"], tone="amber"))
-    body.append(kv("Priority", shipment["priority"], tone="amber"))
+    body.append(kv("Disruption", shipment["disruption"], tone="ice"))
+    body.append(kv("Priority", shipment["priority"], tone="ice"))
     body.append(kv("Weight", f'{shipment["weight_kg"]:,} kg'))
     st.markdown(f'<div class="glass">{"".join(body)}</div>', unsafe_allow_html=True)
 
@@ -121,6 +122,20 @@ with left:
         f"</span></div>"
     )
     st.markdown(f'<div class="glass">{"".join(risk)}</div>', unsafe_allow_html=True)
+
+    rows = [panel_title("Layer 1 — data ingestion")]
+    status_tone = {"Mapped": "t-cyan", "Needs review": "t-ice", "Parsing": "t-muted"}
+    for item in agent.get_feed():
+        tone = status_tone.get(item["status"], "t-muted")
+        rows.append(
+            '<div class="feed-row">'
+            f'<span class="chip">{item["format"]}</span>'
+            f'<span class="feed-name">{item["name"]}</span>'
+            f'<span class="{tone}" style="font-size:11px;min-width:82px;text-align:right">'
+            f'{item["status"]}</span>'
+            "</div>"
+        )
+    st.markdown(f'<div class="glass">{"".join(rows)}</div>', unsafe_allow_html=True)
 
 with right:
     st.markdown(
@@ -171,15 +186,20 @@ frame = pd.DataFrame(routes)
 names = frame["route"].tolist()
 highlight = shipment.get("recommended_route")
 
-co2_colors = [
-    COLORS["teal"] if name == highlight else
-    (COLORS["muted"] if row_baseline else COLORS["amber"])
+# One rule for both charts so a route keeps its identity across them:
+# ice = the recommendation, dark = the booked baseline, mid blue = other candidates.
+# Routes that arrive after the deadline are outlined instead of filled — disqualified.
+bar_colors = [
+    COLORS["ice"] if name == highlight else
+    (COLORS["deep"] if row_baseline else COLORS["blue"])
     for name, row_baseline in zip(names, frame["baseline"])
 ]
-buffer_colors = [
-    COLORS["red"] if hours < 0 else (COLORS["teal"] if name == highlight else COLORS["amber"])
-    for name, hours in zip(names, frame["hours_before_deadline"])
+disqualified = [hours < 0 for hours in frame["hours_before_deadline"]]
+outline_colors = [COLORS["ice"] if late else "rgba(0,0,0,0)" for late in disqualified]
+bar_fills = [
+    COLORS["bg"] if late else color for late, color in zip(disqualified, bar_colors)
 ]
+marker_line = dict(color=outline_colors, width=1.4)
 
 chart_left, chart_right = st.columns(2)
 
@@ -189,7 +209,8 @@ with chart_left:
         go.Bar(
             x=names,
             y=frame["co2e_kg"],
-            marker_color=co2_colors,
+            marker_color=bar_fills,
+            marker_line=marker_line,
             text=[f"{value:,.0f}" for value in frame["co2e_kg"]],
             textposition="outside",
             textfont=dict(size=11, color=COLORS["muted"]),
@@ -201,7 +222,7 @@ with chart_left:
     fig.add_hline(
         y=baseline["co2e_kg"],
         line_dash="dot",
-        line_color="rgba(255,255,255,0.18)",
+        line_color="rgba(185,214,242,0.30)",
         annotation_text="baseline",
         annotation_position="top left",
         annotation_font=dict(size=10, color=COLORS["muted"]),
@@ -214,7 +235,8 @@ with chart_right:
         go.Bar(
             x=names,
             y=frame["hours_before_deadline"],
-            marker_color=buffer_colors,
+            marker_color=bar_fills,
+            marker_line=marker_line,
             text=[f"{value:,.0f} h" for value in frame["hours_before_deadline"]],
             textposition="outside",
             textfont=dict(size=11, color=COLORS["muted"]),
@@ -223,42 +245,27 @@ with chart_right:
                           "<br>%{y:,.1f} h buffer<extra></extra>",
         )
     )
-    fig2.add_hline(y=0, line_color="rgba(239,68,68,0.45)", line_width=1)
+    fig2.add_hline(y=0, line_color="rgba(185,214,242,0.45)", line_width=1)
     st.plotly_chart(plotly_layout(fig2, ytitle="hours"), width="stretch")
 
-st.markdown(panel_title("Route comparison"), unsafe_allow_html=True)
-table = frame.assign(
-    Route=frame["route"],
-    Option=frame["label"],
-    Modes=frame["modes"],
-    **{
-        "CO2e (kg)": frame["co2e_kg"],
-        "Transit (h)": frame["transit_hours"],
-        "Buffer (h)": frame["hours_before_deadline"],
-        "Cost (EUR)": frame["cost_eur"],
-    },
-)[["Route", "Option", "Modes", "CO2e (kg)", "Transit (h)", "Buffer (h)", "Cost (EUR)"]]
-st.dataframe(table, width="stretch", hide_index=True)
+# -------------------------------------------------- comparison table + chat
 
-# ----------------------------------------------------------- feed + chat
+table_col, chat_col = st.columns([1.35, 1])
 
-feed_col, chat_col = st.columns([1, 1.35])
-
-with feed_col:
-    rows = [panel_title("Layer 1 — data ingestion")]
-    status_tone = {"Mapped": "t-teal", "Needs review": "t-amber", "Parsing": "t-muted"}
-    for item in agent.get_feed():
-        tone = status_tone.get(item["status"], "t-muted")
-        rows.append(
-            '<div class="feed-row">'
-            f'<span class="chip">{item["format"]}</span>'
-            f'<span class="feed-name">{item["name"]}</span>'
-            f'<span class="feed-src">{item["source"]}</span>'
-            f'<span class="{tone}" style="font-size:11px;min-width:82px;text-align:right">'
-            f'{item["status"]}</span>'
-            "</div>"
-        )
-    st.markdown(f'<div class="glass">{"".join(rows)}</div>', unsafe_allow_html=True)
+with table_col:
+    st.markdown(panel_title("Route comparison"), unsafe_allow_html=True)
+    table = frame.assign(
+        Route=frame["route"],
+        Option=frame["label"],
+        Modes=frame["modes"],
+        **{
+            "CO2e (kg)": frame["co2e_kg"],
+            "Transit (h)": frame["transit_hours"],
+            "Buffer (h)": frame["hours_before_deadline"],
+            "Cost (EUR)": frame["cost_eur"],
+        },
+    )[["Route", "Option", "Modes", "CO2e (kg)", "Transit (h)", "Buffer (h)", "Cost (EUR)"]]
+    st.dataframe(table, width="stretch", hide_index=True)
 
 with chat_col:
     st.markdown(panel_title("Ask Ceph"), unsafe_allow_html=True)
@@ -280,7 +287,7 @@ with chat_col:
 
 st.markdown(
     '<div class="kpi-sub" style="margin-top:18px;padding-top:10px;'
-    'border-top:1px solid rgba(255,255,255,0.06)">'
+    'border-top:1px solid rgba(185,214,242,0.14)">'
     "Layer 1 ingestion · Layer 2 confidence engine · Layer 3 decision router — "
     f'{"connected to the live Ceph agent" if live else "demo fixtures, agent endpoint not yet connected"}'
     "</div>",

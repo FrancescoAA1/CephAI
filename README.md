@@ -82,6 +82,14 @@ repo with `app.py` as the entrypoint. Add `CEPH_API_URL` to Secrets when the age
 Move the **auto-decision threshold** slider to show routing shift live: at 60% everything executes
 automatically, at 100% every decision lands on a human desk.
 
+## Design
+
+One palette, five blues — `#061a40` `#003559` `#0353a4` `#006daa` `#b9d6f2`. Squared corners
+everywhere, no motion, no shadows. Colour carries meaning rather than decoration: the pale ice tone
+marks whatever needs your attention (the recommended route, a decision awaiting review), mid blue is
+a normal candidate, and the darkest blue is the booked baseline. Routes that arrive after the
+deadline are drawn hollow with an ice outline — disqualified, not just worse.
+
 ## Files
 
 | File | Role |
