@@ -7,6 +7,8 @@ Square corners throughout, no motion, no glow.
 
 from __future__ import annotations
 
+import html
+
 import streamlit as st
 
 COLORS = {
@@ -204,8 +206,13 @@ h1, h2, h3, h4 { color: #b9d6f2; letter-spacing: -0.015em; font-weight: 600; }
 .conf-track { flex: 1; height: 4px; background: rgba(185,214,242,0.12); overflow: hidden; }
 .conf-fill { height: 100%; }
 .conf-num { font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; min-width: 46px; text-align: right; }
-.rationale { font-size: 11.5px; color: #7a9cc6; line-height: 1.65; margin: 8px 0 0 0; padding-left: 14px; }
-.rationale li { margin-bottom: 2px; }
+/* Rationale is rendered as native markdown (never raw HTML — it's model-written
+   text), so the expander's own list is styled to match the dense panels. */
+[data-testid="stExpander"] [data-testid="stMarkdownContainer"] ul {
+    font-size: 11.5px; color: #7a9cc6; line-height: 1.65; margin: 2px 0 0 0; padding-left: 14px;
+}
+[data-testid="stExpander"] [data-testid="stMarkdownContainer"] li { margin-bottom: 2px; }
+[data-testid="stExpander"] [data-testid="stMarkdownContainer"] li p { font-size: 11.5px; margin: 0; }
 
 /* ---------- feed ---------- */
 .feed-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid rgba(185,214,242,0.07); font-size: 11.5px; }
@@ -327,38 +334,64 @@ def plotly_layout(fig, height: int = 250, ytitle: str = "", showlegend: bool = F
 
 
 # ---------------------------------------------------------------- html helpers
+#
+# Everything below is rendered through st.markdown(unsafe_allow_html=True), which
+# Streamlit passes to rehype-raw with no sanitiser. Today the values are local
+# fixtures, but once CEPH_API_URL points at the live agent they become partner
+# documents and model-written text — i.e. untrusted. So every interpolated value
+# is escaped here, at the single boundary, rather than trusting each call site.
+
+_BADGE_KINDS = {"demo", "live", "ok", "warn", "critical", "ai"}
+_TONES = {"ice", "cyan", "blue", "muted"}
+
+
+def esc(value) -> str:
+    return html.escape(str(value), quote=True)
+
+
+def _cls(value: str, allowed: set) -> str:
+    """Class-name tokens are allow-listed, not escaped — they land inside an attribute."""
+    return value if value in allowed else ""
+
 
 def panel_title(text: str) -> str:
-    return f'<div class="panel-title">{text}</div>'
+    return f'<div class="panel-title">{esc(text)}</div>'
 
 
 def badge(text: str, kind: str = "ok", dot: bool = False) -> str:
     marker = '<span class="dot"></span>' if dot else ""
-    return f'<span class="badge badge-{kind}">{marker}{text}</span>'
+    return f'<span class="badge badge-{_cls(kind, _BADGE_KINDS)}">{marker}{esc(text)}</span>'
 
 
 def kpi(label: str, value: str, sub: str = "", tone: str = "", accent: bool = False,
         small: bool = False) -> str:
-    tone_cls = f" t-{tone}" if tone else ""
+    tone_cls = f" t-{_cls(tone, _TONES)}" if _cls(tone, _TONES) else ""
     size_cls = " sm" if small else ""
     accent_cls = " kpi-accent" if accent else ""
-    sub_html = f'<div class="kpi-sub">{sub}</div>' if sub else ""
+    sub_html = f'<div class="kpi-sub">{esc(sub)}</div>' if sub else ""
     return (
         f'<div class="kpi{accent_cls}">'
-        f'<div class="kpi-label">{label}</div>'
-        f'<div class="kpi-value{size_cls}{tone_cls}">{value}</div>'
+        f'<div class="kpi-label">{esc(label)}</div>'
+        f'<div class="kpi-value{size_cls}{tone_cls}">{esc(value)}</div>'
         f"{sub_html}</div>"
     )
 
 
 def kv(key: str, value: str, tone: str = "") -> str:
-    tone_cls = f" t-{tone}" if tone else ""
-    return f'<div class="kv"><span class="kv-k">{key}</span><span class="kv-v{tone_cls}">{value}</span></div>'
+    tone_cls = f" t-{_cls(tone, _TONES)}" if _cls(tone, _TONES) else ""
+    return (
+        f'<div class="kv"><span class="kv-k">{esc(key)}</span>'
+        f'<span class="kv-v{tone_cls}">{esc(value)}</span></div>'
+    )
 
 
 def confidence_bar(score: float) -> str:
     """Confidence meter — ice for high certainty, mid blue when the model is unsure."""
-    pct = max(0.0, min(100.0, score))
+    try:
+        pct = float(score)
+    except (TypeError, ValueError):
+        pct = 0.0
+    pct = max(0.0, min(100.0, pct))
     color = COLORS["ice"] if pct >= 60 else COLORS["cyan"]
     return (
         '<div class="conf-row">'

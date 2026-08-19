@@ -15,6 +15,7 @@ from theme import (
     OCTOPUS,
     badge,
     confidence_bar,
+    esc,
     inject_css,
     kpi,
     kv,
@@ -117,7 +118,7 @@ with left:
     risk.append(
         f'<div style="margin-top:10px">{badge(risk_label, risk_kind, dot=True)} '
         f'<span class="kpi-sub" style="margin-left:6px">'
-        f'{recommended["route"]} {"recovers" if time_gained >= 0 else "gives up"} '
+        f'{esc(recommended["route"])} {"recovers" if time_gained >= 0 else "gives up"} '
         f'{abs(time_gained):.0f} h against the booked routing'
         f"</span></div>"
     )
@@ -129,10 +130,10 @@ with left:
         tone = status_tone.get(item["status"], "t-muted")
         rows.append(
             '<div class="feed-row">'
-            f'<span class="chip">{item["format"]}</span>'
-            f'<span class="feed-name">{item["name"]}</span>'
+            f'<span class="chip">{esc(item["format"])}</span>'
+            f'<span class="feed-name">{esc(item["name"])}</span>'
             f'<span class="{tone}" style="font-size:11px;min-width:82px;text-align:right">'
-            f'{item["status"]}</span>'
+            f'{esc(item["status"])}</span>'
             "</div>"
         )
     st.markdown(f'<div class="glass">{"".join(rows)}</div>', unsafe_allow_html=True)
@@ -151,17 +152,20 @@ with right:
         st.markdown(
             f'<div class="decision">'
             f'<div class="decision-head">'
-            f'<span class="decision-title">{decision["title"]}</span>{state_badge}</div>'
+            f'<span class="decision-title">{esc(decision["title"])}</span>{state_badge}</div>'
             f'{confidence_bar(decision["confidence"])}'
-            f'<div class="kpi-sub">{decision["id"]} · {decision["classification"]} · '
-            f'{decision["action"]}</div>'
+            f'<div class="kpi-sub">{esc(decision["id"])} · {esc(decision["classification"])} · '
+            f'{esc(decision["action"])}</div>'
             f"</div>",
             unsafe_allow_html=True,
         )
 
         with st.expander("Why this decision"):
-            bullets = "".join(f"<li>{reason}</li>" for reason in decision["rationale"])
-            st.markdown(f'<ul class="rationale">{bullets}</ul>', unsafe_allow_html=True)
+            # Rationale is model-written free text — the least trustworthy string on
+            # the page, so it goes through Streamlit's own markdown list rather than
+            # being spliced into HTML.
+            for reason in decision["rationale"]:
+                st.markdown(f"- {reason}")
 
         if not auto:
             actions = st.columns([1, 1, 4])
