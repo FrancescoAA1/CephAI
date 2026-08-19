@@ -1,4 +1,7 @@
-streamlit>=1.49
-plotly>=5.22
-pandas>=2.2
-requests>=2.31
+# Pinned to the exact set the dashboard was built and verified against, so a
+# deploy cannot silently resolve a newer pandas/plotly on demo morning and
+# break the charts. Bump deliberately, then re-check the app.
+streamlit==1.62.0
+plotly==6.9.0
+pandas==3.0.5
+requests==2.34.2
